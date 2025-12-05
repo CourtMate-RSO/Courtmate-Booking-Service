@@ -59,10 +59,39 @@ if not SUPABASE_URL or not SUPABASE_ANON_KEY or not SUPABASE_SERVICE_ROLE_KEY:
     raise ValueError(
         "Missing SUPABASE_URL, SUPABASE_ANON_KEY, or SUPABASE_SERVICE_ROLE_KEY in environment variables")
 
+
 # Endpoints
 @app.get(f"{RESERVATION_PREFIX}/")
-async def root():
-    return {"message": "Hello World"}
+async def get_user_reservations(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get all reservations for the authenticated user"""
+    token = credentials.credentials
+    supabase = user_supabase_client(token)
+    
+    try:
+        # Fetch user's reservations from Supabase
+        # The RLS policies will automatically filter by user_id
+        response = supabase.table("reservations").select("*").order("starts_at", desc=True).execute()
+        
+        data = response.data
+        if not data:
+            return []
+        
+        # Convert to Reservation models
+        reservations = [Reservation(**item) for item in data]
+        return reservations
+        
+    except APIError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.message or str(e),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(e),
+        )
 
 @app.get(f"{RESERVATION_PREFIX}/health")
 async def health_check():
