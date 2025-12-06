@@ -15,9 +15,9 @@ def user_supabase_client(jwt: str):
     options = ClientOptions(
         auto_refresh_token=False,
         persist_session=False,
+        headers={"Authorization": f"Bearer {jwt}"}
     )
     client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=options)
-    client.auth.set_session(access_token=jwt, refresh_token="")
     return client
 
 def admin_supabase_client():

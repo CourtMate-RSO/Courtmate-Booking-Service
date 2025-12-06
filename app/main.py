@@ -68,6 +68,7 @@ async def get_user_reservations(
     """Get all reservations for the authenticated user"""
     token = credentials.credentials
     supabase = user_supabase_client(token)
+    admin_supabase = admin_supabase_client()
     
     try:
         # Fetch user's reservations from Supabase
@@ -78,16 +79,34 @@ async def get_user_reservations(
         if not data:
             return []
         
-        # Convert to Reservation models
-        reservations = [Reservation(**item) for item in data]
-        return reservations
+        # Enhance reservations with court information
+        enriched_reservations = []
+        for item in data:
+            reservation = Reservation(**item)
+            
+            # Fetch court details using admin client (bypassing RLS)
+            try:
+                court_response = admin_supabase.table("courts").select("name, address, city").eq("id", str(item["court_id"])).single().execute()
+                if court_response.data:
+                    reservation.court = court_response.data
+            except Exception as court_error:
+                print(f"Failed to fetch court details for {item['court_id']}: {court_error}")
+                # Continue without court details if fetch fails
+            
+            enriched_reservations.append(reservation)
+        
+        return enriched_reservations
         
     except APIError as e:
+        print(f"Supabase API Error in get_user_reservations: {e}")
+        print(f"Details: {e.details if hasattr(e, 'details') else 'No details'}")
+        print(f"Message: {e.message}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=e.message or str(e),
+            detail=f"Supabase error: {e.message}",
         )
     except Exception as e:
+        print(f"Unexpected error in get_user_reservations: {e}")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(e),

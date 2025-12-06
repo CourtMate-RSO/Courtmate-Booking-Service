@@ -14,7 +14,8 @@ class Reservation(BaseModel):
     user_id: UUID
     starts_at: datetime
     ends_at: datetime
-    total_price: float
+    total_price: Optional[float] = None
     created_at: datetime
     cancelled_at: datetime | None = None
     cancel_reason: str | None = None
+    court: Optional[dict] = None
