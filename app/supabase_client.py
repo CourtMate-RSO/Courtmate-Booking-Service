@@ -12,12 +12,34 @@ def user_supabase_client(jwt: str):
     """
     Create a Supabase client that runs queries as the given user (RLS aware).
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     options = ClientOptions(
         auto_refresh_token=False,
         persist_session=False,
-        headers={"Authorization": f"Bearer {jwt}"}
     )
     client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=options)
+    
+    # Set session token so client requests are executed with user's JWT (RLS-aware)
+    try:
+        client.auth.set_session(access_token=jwt, refresh_token="")
+        logger.info(f"Successfully set user session with JWT")
+    except AttributeError as e:
+        logger.warning(f"set_session not available (old supabase version): {e}")
+        # For older versions, try manually setting the auth state
+        try:
+            # Try to set in the client's storage/auth directly
+            if hasattr(client, '_auth_state'):
+                client._auth_state = {'access_token': jwt}
+            logger.info("Fallback: Set JWT via _auth_state")
+        except Exception as fallback_err:
+            logger.error(f"Could not set JWT via fallback either: {fallback_err}")
+            raise
+    except Exception as e:
+        logger.error(f"Error setting user session: {str(e)}")
+        raise
+    
     return client
 
 def admin_supabase_client():
