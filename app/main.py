@@ -151,12 +151,36 @@ async def create_reservation(
             detail="Invalid authentication token",
         )
 
+    # Resolve user id from the auth token so we can set user_id on the inserted row
+    try:
+        user_resp = httpx.get(
+            f"{SUPABASE_URL}/auth/v1/user",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "apikey": SUPABASE_ANON_KEY,
+            },
+            timeout=5.0
+        )
+        if user_resp.status_code == 200:
+            user_json = user_resp.json()
+            user_id = user_json.get("id")
+            logger.info(f"Resolved user_id={user_id} from token")
+        else:
+            logger.warning(f"Could not resolve user from token: status={user_resp.status_code}")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error resolving user from token: {e}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication token")
+
     logger.info(f"create_reservation: court_id={reservation.court_id}, starts_at={reservation.starts_at}, ends_at={reservation.ends_at}")
 
     try:
         # Insert reservation directly into table (RLS will enforce user_id)
         reservation_data = {
             "court_id": str(reservation.court_id),
+            "user_id": str(user_id),
             "starts_at": reservation.starts_at.isoformat(),
             "ends_at": reservation.ends_at.isoformat(),
         }
