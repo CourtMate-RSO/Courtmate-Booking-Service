@@ -10,13 +10,25 @@ from app.supabase_client import (
 )
 import os
 import logging
+import sys
 from dotenv import load_dotenv
 import httpx
 from postgrest.exceptions import APIError  # comes with supabase-py
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Structured JSON logging setup
+from pythonjsonlogger import jsonlogger
+
+logger = logging.getLogger("booking-service")
+handler = logging.StreamHandler(sys.stdout)
+formatter = jsonlogger.JsonFormatter(
+    '%(asctime)s %(levelname)s %(name)s %(message)s',
+    rename_fields={"levelname": "level", "asctime": "timestamp"}
+)
+handler.setFormatter(formatter)
+logger.handlers = []
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+logger.propagate = False
 
 # Load environment variables from .env file
 load_dotenv()
@@ -54,6 +66,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Prometheus metrics instrumentation
+from prometheus_fastapi_instrumentator import Instrumentator
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 # Security and Supabase configurations
 security = HTTPBearer()
