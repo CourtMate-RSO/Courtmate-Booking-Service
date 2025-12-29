@@ -82,6 +82,12 @@ if not SUPABASE_URL or not SUPABASE_ANON_KEY or not SUPABASE_SERVICE_ROLE_KEY:
         "Missing SUPABASE_URL, SUPABASE_ANON_KEY, or SUPABASE_SERVICE_ROLE_KEY in environment variables")
 
 
+# Add health endpoint at root
+@app.get("/health")
+async def health():
+    return {"status": "healthy", "service": "booking-service"}
+
+
 # Endpoints
 @app.get(f"{RESERVATION_PREFIX}/")
 async def get_user_reservations(
@@ -281,4 +287,3 @@ async def cancel_reservation(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
         )
-    
