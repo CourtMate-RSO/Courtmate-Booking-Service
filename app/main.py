@@ -36,25 +36,15 @@ load_dotenv()
 RESERVATION_PREFIX = "/reservation"
 ENV = os.getenv("ENV", "dev")
 
-# FastAPI app
-if ENV == "prod":
-    app = FastAPI(
-        title="Authentication API",
-        description="API for managing user authentication.",
-        version="1.0.0",
-        openapi_url=None,
-        docs_url=None,
-        redoc_url=None,
-    )
-else:
-    app = FastAPI(
-        title="Authentication API",
-        description="API for managing user authentication.",
-        version="1.0.0",
-        openapi_url=f"{RESERVATION_PREFIX}/openapi.json",
-        docs_url=f"{RESERVATION_PREFIX}/docs",
-        redoc_url=f"{RESERVATION_PREFIX}/redoc",
-    )
+# FastAPI app - Enable docs for documentation generation
+app = FastAPI(
+    title="Booking API",
+    description="API for managing court reservations and bookings.",
+    version="1.0.0",
+    openapi_url=f"{RESERVATION_PREFIX}/openapi.json",
+    docs_url=f"{RESERVATION_PREFIX}/docs",
+    redoc_url=f"{RESERVATION_PREFIX}/redoc",
+)
 
 app.add_middleware(
     CORSMiddleware,
