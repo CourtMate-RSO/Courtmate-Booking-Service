@@ -29,16 +29,19 @@ Courtmate-Booking-Service/
 
 ## 🔧 API Endpoints
 
-All endpoints are prefixed with `/reservation`
+The Booking Service exposes endpoints under the `/api/bookings` prefix (see OpenAPI documentation).
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/reservation/health` | Health check |
-| GET | `/reservation/docs` | Swagger API documentation |
-| POST | `/reservation/` | Create a new reservation |
-| GET | `/reservation/` | Get user's reservations |
-| GET | `/reservation/{reservation_id}` | Get reservation details |
-| PUT | `/reservation/{reservation_id}` | Cancel a reservation |
+| GET | `/api/bookings/health` | Health check |
+| POST | `/api/bookings/reservation` | Create a new reservation (requires bearer token) |
+| GET | `/api/bookings/reservation/user` | Get authenticated user's reservations (requires bearer token) |
+| GET | `/api/bookings/reservation/{reservation_id}` | Get reservation details by ID (requires bearer token) |
+| DELETE | `/api/bookings/reservation/{reservation_id}` | Cancel a reservation (requires bearer token) |
+
+Notes:
+- Requests to create a reservation must include `facility_id`, `start_time` and `end_time` in the JSON body; a `409` response is returned when the time slot is already booked.
+- The public API paths follow the OpenAPI spec in `documentation/docs/openapi.yaml` and use `/api/bookings` rather than the legacy `/reservation` prefix.
 
 ## 🔐 Authentication
 
